@@ -1,0 +1,16 @@
+{
+  "name": "Argus Zero",
+  "short_name": "Argus Zero",
+  "description": "Continuity-of-government facility survival sim. You are the acting commander. Hold the facility.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a120e",
+  "theme_color": "#0a120e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

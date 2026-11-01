@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Argus Zero</title>
+<meta name="description" content="Argus Zero — a continuity-of-government facility survival sim. You are the acting commander. Hold the facility.">
+<meta name="theme-color" content="#0a120e">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+  html, body { margin:0; padding:0; background:#060a08; }
+  body { padding:10px 6px 22px; }
+
+  * { box-sizing: border-box; }
+  .az { font-family: ui-monospace, Menlo, Consolas, monospace; background:#0a120e; color:#cfe6d2; border:1px solid #2c4a38; border-radius:10px; padding:12px; max-width:600px; margin:0 auto; }
+  .az-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid #2c4a38; padding-bottom:8px; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
+  .az-title { font-weight:700; letter-spacing:2px; font-size:16px; color:#eaffef; }
+  .az-sub { font-size:10px; color:#7fae8c; letter-spacing:1px; }
+  .az-clock { font-size:12px; color:#ffd479; text-align:right; }
+  .az-patch { display:inline-block; transform:rotate(-4deg); background:#31435a; color:#dbe9ff; font-size:9px; letter-spacing:1px; padding:2px 6px; border-radius:2px; border:1px dashed #7d9bbd; }
+  .az-grid { display:flex; gap:10px; flex-wrap:wrap; }
+  .az-panel { background:#0e1a13; border:1px solid #24402f; border-radius:8px; padding:9px 10px; flex:1 1 250px; }
+  .az-panel h4 { margin:0 0 7px; font-size:10px; letter-spacing:2px; color:#7fae8c; font-weight:700; }
+  .az-row { display:flex; align-items:center; gap:8px; font-size:12px; margin:4px 0; }
+  .az-row .nm { width:110px; }
+  .az-bar { flex:1; height:7px; background:#16281c; border-radius:3px; overflow:hidden; }
+  .az-bar i { display:block; height:100%; background:#58b368; }
+  .az-bar i.warn { background:#e0a83e; } .az-bar i.crit { background:#d95f4b; }
+  .az-days { width:62px; text-align:right; color:#eaffef; }
+  .az-seis { color:#ffd479; font-size:12px; line-height:1.6; }
+  .az-seis b { color:#ff9d7a; }
+  .az-leg { font-size:12px; line-height:1.6; } .az-leg .big { font-size:20px; color:#eaffef; }
+  .az-event { margin-top:10px; background:#131109; border:1px solid #57481c; border-radius:8px; padding:10px; }
+  .az-event h4 { margin:0 0 6px; font-size:10px; letter-spacing:2px; color:#e0a83e; }
+  .az-event p { margin:0 0 9px; font-size:12.5px; line-height:1.55; color:#f0e9d2; white-space:pre-line; }
+  .az-btns { display:flex; gap:8px; flex-wrap:wrap; }
+  .az-btn { font:inherit; font-size:12px; background:#1d2f1e; color:#cfe6d2; border:1px solid #3c6a49; border-radius:6px; padding:7px 10px; cursor:pointer; }
+  .az-btn:hover { background:#274a2e; } .az-btn:disabled { opacity:.4; cursor:default; }
+  .az-btn.amber { background:#2f2a12; border-color:#8a742a; color:#f0e9d2; }
+  .az-alloc { margin-top:10px; }
+  .az-arow { display:flex; align-items:center; gap:8px; font-size:12px; margin:6px 0; }
+  .az-arow .nm { width:150px; } .az-arow .fx { flex:1; color:#7fae8c; font-size:11px; }
+  .az-step { font:inherit; width:26px; height:26px; border-radius:5px; background:#1d2f1e; color:#cfe6d2; border:1px solid #3c6a49; cursor:pointer; font-size:14px; line-height:1; }
+  .az-step:disabled { opacity:.35; cursor:default; }
+  .az-pts { width:20px; text-align:center; color:#eaffef; }
+  .az-log { margin-top:10px; background:#0e1a13; border:1px solid #24402f; border-radius:8px; padding:9px 10px; font-size:11.5px; line-height:1.6; color:#9fc7a9; max-height:170px; overflow-y:auto; white-space:pre-line; }
+  .az-log h4 { margin:0 0 5px; font-size:10px; letter-spacing:2px; color:#7fae8c; }
+  .az-over { margin-top:10px; border:1px solid #58b368; background:#0e2013; border-radius:8px; padding:12px; font-size:13px; line-height:1.6; color:#eaffef; white-space:pre-line; }
+  .az-over.bad { border-color:#d95f4b; background:#221110; }
+  .hidden { display:none; }
+  .az-scene { margin-bottom:10px; border:1px solid #24402f; border-radius:8px; overflow:hidden; }
+  .az-scene svg { display:block; width:100%; height:auto; }
+  @keyframes blk { 0%,55% {opacity:1} 56%,100% {opacity:.1} }
+  .blk { animation: blk 1.7s infinite; }
+
+</style>
+</head>
+<body>
+<div class="az">
+  <div class="az-head">
+    <div>
+      <div class="az-title">ARGUS ZERO</div>
+      <div class="az-sub">USCS FACILITY — PRIMARY CONTROL ROOM · TEST SCENARIO: FIRST WATCH — ENDLESS · ONE TURN = ONE WEEK</div>
+    </div>
+    <div class="az-clock"><span id="dayline">DAY 1 · 08:17</span><br>
+      <span class="az-sub">ACTING CMDR: CAPT. M. HALE</span> <span class="az-patch">TEMP</span>
+    </div>
+  </div>
+
+  <div class="az-scene" id="scene"></div>
+
+  <div class="az-grid">
+    <div class="az-panel">
+      <h4>DAYS REMAINING</h4>
+      <div id="board"></div>
+    </div>
+    <div class="az-panel">
+      <h4>SEISMIC BOARD</h4>
+      <div class="az-seis" id="seis"></div>
+      <h4 style="margin-top:10px">LEGITIMACY</h4>
+      <div class="az-leg" id="leg"></div>
+    </div>
+  </div>
+
+  <div class="az-event" id="eventbox">
+    <h4 id="evtitle">EVENT</h4>
+    <p id="evtext"></p>
+    <div class="az-btns" id="evbtns"></div>
+  </div>
+
+  <div class="az-panel az-alloc hidden" id="allocbox">
+    <h4>ALLOCATE THE WATCH — <span id="ptsleft"></span> SHIFTS UNASSIGNED</h4>
+    <div style="font-size:11px;color:#7fae8c;margin-bottom:6px">Shifts are drawn from the watch rotation — the facility holds about 250 military (five platoons, USCS) with 36 civilian staff mixed through every section. The military runs the facility.</div>
+    <div id="alloc"></div>
+    <div class="az-btns" style="margin-top:9px">
+      <button class="az-btn amber" id="endwatch">END WATCH ▸ RUN THE WEEK</button>
+    </div>
+  </div>
+
+  <div class="az-panel hidden" id="resbox" style="margin-top:10px">
+    <h4>RESEARCH — <span id="rpbal"></span> RESEARCH POINTS</h4>
+    <div style="font-size:11px;color:#7fae8c;margin-bottom:6px">Torres and Kline on the boards, turning paper into knowledge. Assign ANALYSIS shifts during allocation to earn points; spend them here.</div>
+    <div id="reslist"></div>
+  </div>
+
+  <div class="az-panel hidden" id="upgbox" style="margin-top:10px">
+    <h4>UPGRADES — FACILITY WORKS</h4>
+    <div style="font-size:11px;color:#7fae8c;margin-bottom:6px">Permanent works, paid out of current stocks. Expensive now, cheaper than the alternative later.</div>
+    <div id="upglist"></div>
+  </div>
+
+  <div class="az-over hidden" id="overbox"></div>
+
+  <div class="az-log"><h4>FACILITY LOG</h4><div id="log"></div></div>
+
+  <div class="az-btns" style="margin-top:10px">
+    <button class="az-btn" id="restart">RESTART SCENARIO</button>
+  </div>
+</div>
+<script>
+(function(){
+  var STATIONS = [
+    {k:'hydro', nm:'HYDROPONICS', fx:'+food production (Torres\u2019 cycle)'},
+    {k:'eng',   nm:'ENGINEERING', fx:'+power & air filtration (Patel, Kowalski)'},
+    {k:'inf',   nm:'INFIRMARY',   fx:'+medicine, +morale, treats the sick'},
+    {k:'sec',   nm:'COMMS / SECURITY', fx:'+legitimacy, better information (Reyes, Brooks)'},
+    {k:'lab',   nm:'ANALYSIS / LAB', fx:'+research points (Torres, Kline on the boards)'}
+  ];
+  var SCRIPTED = {
+    1:{t:'EVENT — THE PACKET IS LATE', x:'Yellowstone\u2019s seismic packet is six minutes late, and climbing. Someone \u2014 not you \u2014 has underlined a number on the diagnostic. Harlan\u2019s briefing is in twenty minutes.', c:[
+      {b:'INITIAL IT AND CARRY ON', fx:{legit:2}, log:'You initial under the underline. The room settles. The packet stays late.'},
+      {b:'HOLD — WATCH ANOTHER CYCLE', fx:{legit:4, morale:-1}, log:'You let the cycle turn. Kline says nothing. That is its own kind of loud. The room notices you noticed.'}]},
+    2:{t:'EVENT — A CALL WITH NO NAME', x:'Inner fence requests a high-priority secure line. Origin blanked. Addressed to the CO and the XO. Both. Ninety seconds later Harlan is on the internal, thin through the speaker: \u201cHale. Reeves and I are pulled topside. Immediate. You\u2019re acting until we return. Own it.\u201d The line clicks dead.', c:[
+      {b:'\u201cBACK TO STATIONS. WE KEEP THE WATCH.\u201d', fx:{legit:6, morale:1}, log:'You ask Diaz one question \u2014 destination. Wheeler Downtown Airport. You do not invent the rest. Speculation goes underground, where it belongs.'},
+      {b:'DEMAND ANSWERS FROM THE SUITE', fx:{legit:-5, morale:-2}, log:'The suite does not answer. The room heard you ask, and heard the silence after. Bars feel cold.'}]},
+    3:{t:'EVENT — THE FEED GOES DARK', x:'The aftershock is cheap. Not a drama. A skip. The Sector Three pump misses one beat and finds the next like a man catching a stair. Then the Yellowstone feed stops being late and starts being gone. Ash is falling on the motor pool cameras. Nobody says the word yet. You say it.', c:[
+      {b:'ANNOUNCE IT PLAINLY, WITH THE NUMBERS', fx:{legit:5, morale:-4}, log:'\u201cYellowstone has erupted. Here is what we have. Here is what we do.\u201d Panic needs a vacuum. You did not leave one.'},
+      {b:'SOFTEN IT — \u201cA SITUATION DEVELOPING\u201d', fx:{legit:-6, morale:-1}, log:'By dinner everyone knows anyway, and knows you knew first. The soft words cost more than the hard ones would have.'}]},
+    5:{t:'EVENT — THE CONGRESSMAN\u2019S CONVOY', x:'Congressman Thomas never made his tour. His convoy is at the outer fence now \u2014 eleven staffers, two drivers, no supplies, and a man used to doors opening. Security looks at you.', c:[
+      {b:'TAKE THEM IN — ALL THIRTEEN', fx:{pop:13, food:-4, water:-4, legit:7, morale:4}, log:'Thirteen more mouths. Also thirteen more pairs of hands, and a story the room tells itself: the door opens for people. Legitimacy, stocked like diesel.'},
+      {b:'TURN THEM AWAY', fx:{legit:-8, morale:-6, power:1}, log:'The fence stays shut. The cameras watch them walk back into the ash. So does everyone on shift. Dinner is very quiet.'}]},
+    8:{t:'EVENT — A KNOCK, AT 03:00', x:'One person at the service door. A nurse, from a clinic two miles out. She has a bag of antibiotics and a list of names she will not stop saying. She is asking for shelter, not supplies.', c:[
+      {b:'OPEN THE DOOR', fx:{pop:1, med:3, legit:3, morale:3}, log:'One nurse, one bag of antibiotics, and the infirmary runs better than it did yesterday. Some trades are not on the manifest.'},
+      {b:'PROTOCOL IS PROTOCOL', fx:{legit:-3, morale:-3}, log:'Protocol holds. So does the memory of the knocking. It comes back at odd hours, like a pump missing a beat.'}]},
+    11:{t:'EVENT — THE DIRECTIVE', x:'A directive arrives on the suite line, proper format, old authority codes: divert 40% of remaining diesel to keep the emergency broadcast transmitter warm for a government that may be three people in a room like yours. The codes check out. The voice does not come with them.', c:[
+      {b:'COMPLY — THE MISSION IS THE MISSION', fx:{power:-10, legit:9}, log:'The transmitter stays warm. That night, a reply comes \u2014 two words, human-typed: STILL HERE. The room stands a little straighter.'},
+      {b:'REFUSE — THE PEOPLE HERE COME FIRST', fx:{legit:-7, morale:3}, log:'You log the refusal in your own name. The transmitter goes cold on schedule. Nobody argues. Nobody quite meets your eye either.'}]}
+  };
+  var RESEARCH = [
+    {k:'ash', nm:'ASH COMPOSITION ANALYSIS', cost:6, fx:'Air filters decay slower. The ash is a known enemy now.'},
+    {k:'water', nm:'WATER LOOP AUDIT', cost:6, fx:'Water losses shrink. Every liter accounted for, twice.'},
+    {k:'light', nm:'GREENHOUSE LIGHTING RIG', cost:8, fx:'Hydroponics yields more per shift.'},
+    {k:'coldmed', nm:'FIELD MANUAL: COLD & ASH MEDICINE', cost:8, fx:'The infirmary stretches every dose further.'},
+    {k:'signal', nm:'SIGNAL TRIANGULATION', cost:10, fx:'Comms finds voices faster. Legitimacy work counts for more.'},
+    {k:'seismic', nm:'SEISMIC MODEL', cost:10, fx:'Hard weeks stop being surprises. Their bite is halved.'}
+  ];
+  var UPGRADES = [
+    {k:'filters', nm:'SPARE FILTER BANK', cost:{power:6}, fx:'Air decay down, filtration output up.'},
+    {k:'rack', nm:'SECOND GREENHOUSE RACK', cost:{power:4, water:6}, fx:'Hydroponics yields more per shift.'},
+    {k:'diesel', nm:'DIESEL POLISHING RIG', cost:{power:7}, fx:'Fuel burn drops every week, permanently.'},
+    {k:'infirm', nm:'INFIRMARY EXPANSION', cost:{med:4, power:4}, fx:'Better care: medicine stretches, morale steadies.'},
+    {k:'comms', nm:'HARDENED COMMS SUITE', cost:{power:5}, fx:'The facility sounds like a government on every band. Legitimacy fades slower.'}
+  ];
+  var POOL = [
+    {t:'EVENT — FILTERS', x:'Climate strip 7 is loading faster than the book says. The Velcro patch has let go another millimeter. Engineering wants a full strip change \u2014 half a day of power and the spare set.', c:[
+      {b:'CHANGE THE STRIP NOW', fx:{power:-5, air:10}, log:'Air tastes like nothing again. That is what air is supposed to taste like.'},
+      {b:'RUN IT LONGER', fx:{air:-6, morale:-1}, log:'The strip holds. The smell of wet iron and filter soap gets into the food anyway.'}]},
+    {t:'EVENT — THE UNDERLINE', x:'Overnight flags: a hydroponics yield figure has been underlined in black, by a hand nobody admits to. The number is fine. The underline is the problem \u2014 the room is watching to see if you hunt the hand or read the number.', c:[
+      {b:'READ THE NUMBER, IGNORE THE HAND', fx:{legit:3}, log:'You initial it and move on. By lunch the underlining stops. Numbers are just numbers again.'},
+      {b:'FIND OUT WHO DID IT', fx:{legit:-4, morale:-2}, log:'You never find them. The room learns that paper can scare the captain. That lesson is expensive.'}]},
+    {t:'EVENT — SICK BAY', x:'Four people down with a gut bug \u2014 bad water taste in Sector Two, or just bad luck. The infirmary wants medicine and a second pair of hands.', c:[
+      {b:'TREAT IT HARD AND FAST', fx:{med:-6, morale:2, pop:0}, log:'Two days of soup and salts. All four back on their feet, and the infirmary\u2019s stock is thinner for it.'},
+      {b:'LET IT RUN ITS COURSE', fx:{med:1, morale:-4, pop:-1}, log:'It runs its course through nine people before it burns out. One does not get up. The log does not use his name. You do, at night.'}]},
+    {t:'EVENT — RATION TALK', x:'Kowalski, quiet, at your elbow: the kitchen crew can stretch the menu \u2014 thinner soups, smaller bread \u2014 and nobody has to call it rationing. Or you call it what it is, on the board, in the open.', c:[
+      {b:'CALL IT RATIONING, IN THE OPEN', fx:{food:8, morale:-2, legit:4}, log:'Smaller bread, honest board. People grumble at the number, not at you. There is a difference, and it compounds.'},
+      {b:'QUIET STRETCH, NO ANNOUNCEMENT', fx:{food:8, morale:1, legit:-4}, log:'The soup thins. People are not stupid; they measure soup the way you measure packets. The quiet costs legitimacy you cannot see leaving.'}]},
+    {t:'EVENT — THE BIRTHDAY', x:'There is a birthday in the population. She is nine. Her mother asks, formally, through channels, whether the facility marks birthdays. The kitchen has exactly one tin of peaches left.', c:[
+      {b:'OPEN THE PEACHES', fx:{food:-2, morale:7, legit:2}, log:'One tin of peaches, 286 people, and every single one of them would tell you it was enough. Morale is a resource. So is being nine, once.'},
+      {b:'SAVE THE TIN — WE CANNOT AFFORD SYMBOLS', fx:{morale:-5, legit:-1}, log:'The tin stays on the shelf, accruing interest in a currency you did not mean to bank.'}]},
+    {t:'EVENT — STATIC', x:'Comms catches a fragment on the old band: a voice, a county name, coordinates read twice and then gone. Reyes cannot raise them again. It might be another facility. It might be a recording on a loop.', c:[
+      {b:'SPEND POWER TRYING TO ANSWER', fx:{power:-5, legit:2, morale:2}, log:'No reply. But the watch stood a little taller knowing you tried. Outside is a rumor again, not a wall.'},
+      {b:'LOG IT AND HOLD POWER', fx:{legit:-1}, log:'Coordinates in the log, in Torres\u2019 hand. Some doors you do not open are also data.'}]}
+  ];
+  function fresh(){
+    return { ver:1, day:1, phase:'event', food:60, water:90, power:55, air:48, med:35, pop:286, morale:58, legit:62,
+      alloc:{hydro:3, eng:3, inf:2, sec:1, lab:1}, rp:0, res:{}, upg:{}, ev:null, evDone:false, over:false, poolIdx:0,
+      log:['WEEK 1 — 08:17. You take the watch. The packet is late. Nobody says anything yet.'] };
+  }
+  var S;
+  function norm(){ if(!S) return; if(S.ver===undefined) S.ver=1; if(S.rp===undefined) S.rp=0; if(!S.res) S.res={}; if(!S.upg) S.upg={}; if(S.alloc && S.alloc.lab===undefined) S.alloc.lab=0; }
+  function sceneFor(){
+    var ph = S.over ? 'ended' : S.day===1 ? 'calm' : S.day===2 ? 'alert' : S.day===3 ? 'eruption' : S.day<=8 ? 'ashfall' : S.day<=25 ? 'winter' : 'deep';
+    var sky = {calm:['#8fbfe8','#dceffb'], alert:['#d9a05a','#f2ddba'], eruption:['#4a3a33','#8a5a3a'], ashfall:['#6d6d6d','#a8a8a2'], winter:['#aebfc9','#e8eef0'], deep:['#5d6a72','#9aa7ad'], ended:['#0a0a0c','#1c1c20']}[ph];
+    var gnd = {calm:'#5d8a4c', alert:'#7a8a4c', eruption:'#6b6255', ashfall:'#b9b9b2', winter:'#eef2f3', deep:'#dde5e8', ended:'#17171a'}[ph];
+    var city = {calm:'#5a7186', alert:'#6e5a49', eruption:'#3d332c', ashfall:'#5c5c58', winter:'#8b9aa2', deep:'#5f6d74', ended:'#101013'}[ph];
+    var extra = '';
+    if (ph==='calm') extra = '<circle cx="468" cy="18" r="9" fill="#ffd94d" opacity="0.9"/><g fill="#33424f"><rect x="392" y="34" width="34" height="5" rx="2"/><path d="M424 31 l10 4 l-10 4 z"/></g>';
+    if (ph==='alert') extra = '<circle cx="470" cy="20" r="9" fill="#ffb84d" opacity="0.85"/><g fill="#4a3a2c"><rect x="428" y="24" width="30" height="4" rx="2"/><path d="M456 21 l9 4 l-9 4 z"/></g><rect x="396" y="27" width="26" height="1.6" fill="#ffffff" opacity="0.5"/>';
+    if (ph==='eruption') extra = '<ellipse cx="66" cy="62" rx="72" ry="9" fill="#ff7a2f" opacity="0.55"/><path d="M52 62 C46 38 58 30 54 16 C52 8 62 4 70 8 C84 2 94 12 88 22 C96 32 88 44 86 62 Z" fill="#565049" opacity="0.95"/><g fill="#e8e8e8" opacity="0.85"><circle cx="120" cy="14" r="1.6"/><circle cx="180" cy="26" r="1.3"/><circle cx="240" cy="10" r="1.7"/><circle cx="310" cy="22" r="1.4"/><circle cx="380" cy="14" r="1.6"/><circle cx="450" cy="28" r="1.3"/><circle cx="520" cy="16" r="1.6"/><circle cx="205" cy="40" r="1.2"/><circle cx="345" cy="38" r="1.2"/><circle cx="480" cy="44" r="1.2"/></g>';
+    if (ph==='ashfall') extra = '<g fill="#f2f2ee" opacity="0.9"><circle cx="110" cy="12" r="1.6"/><circle cx="190" cy="24" r="1.4"/><circle cx="260" cy="9" r="1.7"/><circle cx="330" cy="20" r="1.4"/><circle cx="410" cy="12" r="1.6"/><circle cx="490" cy="26" r="1.4"/><circle cx="150" cy="38" r="1.2"/><circle cx="290" cy="36" r="1.2"/><circle cx="440" cy="40" r="1.2"/><circle cx="530" cy="38" r="1.3"/></g><g fill="#d8d8d2"><ellipse cx="90" cy="67" rx="46" ry="4"/><ellipse cx="300" cy="68" rx="60" ry="4.5"/><ellipse cx="500" cy="67" rx="52" ry="4"/></g>';
+    if (ph==='winter' || ph==='deep') extra = '<circle cx="472" cy="18" r="10" fill="#ffffff" opacity="'+(ph==='winter'?'0.55':'0.3')+'"/><g fill="#ffffff"><ellipse cx="80" cy="66" rx="60" ry="6"/><ellipse cx="230" cy="68" rx="80" ry="7"/><ellipse cx="420" cy="66" rx="76" ry="6"/><ellipse cx="540" cy="68" rx="46" ry="5"/></g><g stroke="#3d454a" stroke-width="1.6" fill="none"><path d="M128 66 L128 44 M128 52 L118 44 M128 50 L138 42"/><path d="M512 66 L512 46 M512 54 L503 47 M512 52 L521 45"/></g>' + (ph==='deep' ? '<rect x="0" y="0" width="560" height="72" fill="#10151a" opacity="0.35"/>' : '');
+    if (ph==='ended') extra = '<text x="280" y="38" text-anchor="middle" font-size="11" letter-spacing="3" fill="#d95f4b">SURFACE FEED LOST</text>';
+    var lit = S.over ? '#3a2323' : '#ffd479';
+    return '<svg viewBox="0 0 560 176" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, Menlo, monospace">'
+      + '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sky[0]+'"/><stop offset="1" stop-color="'+sky[1]+'"/></linearGradient>'
+      + '<linearGradient id="soil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1e12"/><stop offset="1" stop-color="#120c06"/></linearGradient></defs>'
+      + '<rect x="0" y="0" width="560" height="70" fill="url(#sky)"/>'
+      + '<g fill="'+city+'"><rect x="8" y="38" width="12" height="28"/><rect x="24" y="28" width="10" height="38"/><rect x="38" y="44" width="14" height="22"/><rect x="56" y="22" width="9" height="44"/><rect x="69" y="36" width="12" height="30"/><rect x="470" y="50" width="34" height="16"/><rect x="508" y="54" width="22" height="12"/></g>'
+      + extra
+      + '<rect x="0" y="64" width="560" height="8" fill="'+gnd+'"/>'
+      + '<line x1="180" y1="64" x2="180" y2="56" stroke="#444" stroke-width="1.4"/><line x1="380" y1="64" x2="380" y2="56" stroke="#444" stroke-width="1.4"/><line x1="180" y1="58" x2="380" y2="58" stroke="#444" stroke-width="1"/>'
+      + '<line x1="283" y1="64" x2="283" y2="20" stroke="#555" stroke-width="1.6"/><circle cx="283" cy="17" r="2.6" fill="#ff5f4b" class="blk"/>'
+      + '<rect x="0" y="72" width="560" height="104" fill="url(#soil)"/>'
+      + '<rect x="262" y="58" width="38" height="10" fill="#3a3a3a" stroke="#555" stroke-width="0.8"/>'
+      + '<rect x="274" y="68" width="14" height="96" fill="#0c1410" stroke="#2c4a38" stroke-width="0.8"/>'
+      + '<g stroke="#2c4a38" fill="#0e1a13">'
+      + '<rect x="150" y="84" width="150" height="24"/><rect x="310" y="84" width="110" height="24"/>'
+      + '<rect x="150" y="114" width="150" height="24"/><rect x="310" y="114" width="110" height="24"/>'
+      + '<rect x="150" y="144" width="270" height="24"/></g>'
+      + '<g fill="'+lit+'"><circle cx="170" cy="96" r="2"/><circle cx="196" cy="96" r="2"/><circle cx="330" cy="96" r="2"/><circle cx="170" cy="126" r="2"/><circle cx="356" cy="126" r="2"/><circle cx="222" cy="156" r="2"/></g>'
+      + '<g fill="#58b368" opacity="0.8"><circle cx="248" cy="126" r="2"/><circle cx="262" cy="126" r="2"/><circle cx="276" cy="126" r="2"/></g>'
+      + '<g font-size="8" fill="#7fae8c" letter-spacing="1"><text x="432" y="99">L1 · CONTROL ROOM</text><text x="432" y="129">L2 · HYDRO / INFIRMARY</text><text x="432" y="159">L3 · ENGINEERING</text></g>'
+      + '<text x="10" y="86" font-size="8" fill="#8a7358" letter-spacing="1">BELOW GROUND — ARGUS ZERO</text>'
+      + '<text x="10" y="60" font-size="8" fill="#00000088" letter-spacing="1">ABOVE GROUND — SURFACE CAM 01</text>'
+      + '</svg>';
+  }
+  function clamp(){ S.food=Math.max(0,S.food); S.water=Math.max(0,S.water); S.power=Math.max(0,S.power); S.air=Math.max(0,S.air); S.med=Math.max(0,S.med);
+    S.morale=Math.max(0,Math.min(100,S.morale)); S.legit=Math.max(0,Math.min(100,S.legit)); }
+  function r1(n){ return Math.round(n*10)/10; }
+  function bar(v, max){ var p=Math.max(0,Math.min(100, v/max*100)); var cls = p<=25?'crit':(p<=45?'warn':''); return '<span class="az-bar"><i class="'+cls+'" style="width:'+p+'%"></i></span>'; }
+  function render(){
+    document.getElementById('scene').innerHTML = sceneFor();
+    var _y=Math.floor((S.day-1)/52)+1, _w=((S.day-1)%52)+1; document.getElementById('dayline').textContent = 'YEAR ' + _y + ' · WEEK ' + _w + ' · ' + (S.phase==='event' ? 'EVENT' : 'ALLOCATION');
+    var rows = [
+      ['FOOD · HYDRO', S.food, 70], ['WATER · RECLAM', S.water, 100], ['POWER · DIESEL', S.power, 70],
+      ['AIR · FILTRATION', S.air, 60], ['MEDICINE', S.med, 45]
+    ];
+    document.getElementById('board').innerHTML = rows.map(function(r){
+      return '<div class="az-row"><span class="nm">'+r[0]+'</span>'+bar(r[1], r[2])+'<span class="az-days">'+r1(r[1])+' d</span></div>';
+    }).join('')
+    + '<div class="az-row"><span class="nm">MILITARY · 5 PLATOONS</span>'+bar(250,275)+'<span class="az-days">250</span></div>'
+    + '<div class="az-row"><span class="nm">CIVILIAN STAFF</span>'+bar(36,50)+'<span class="az-days">36</span></div>'
+    + '<div class="az-row"><span class="nm">SOULS ABOARD</span>'+bar(S.pop,300)+'<span class="az-days">'+S.pop+'</span></div>'
+    + '<div class="az-row"><span class="nm">MORALE</span>'+bar(S.morale,100)+'<span class="az-days">'+Math.round(S.morale)+'%</span></div>';
+    var seis;
+    if (S.day===1) seis = 'YELLOWSTONE PACKET: <b>LATE — AND CLIMBING</b><br>LOCAL STACK: CLEANER THAN FEED<br>SECTOR 3 PUMP: STEADY';
+    else if (S.day===2) seis = 'YELLOWSTONE PACKET: <b>STILL LATE</b><br>CO + XO: OFF-SITE — WHEELER DOWNTOWN (MKC)<br>COMMAND: <b>ACTING — HALE</b>';
+    else seis = 'YELLOWSTONE FEED: <b>GONE — ERUPTION CONFIRMED</b><br>ASH: FALLING, EXTERIOR CAMERAS ONLY<br>SECTOR 3 PUMP: STEADY. IT KEEPS COUNTING.';
+    document.getElementById('seis').innerHTML = seis;
+    document.getElementById('leg').innerHTML = '<span class="big">'+Math.round(S.legit)+'%</span> — ' + (S.legit>=70?'the room is yours.':S.legit>=45?'the room believes you. For now.':S.legit>=25?'the room is starting to do its own math.':'the room has stopped looking at you first.');
+    var eb = document.getElementById('eventbox'), ab = document.getElementById('allocbox'), ob = document.getElementById('overbox');
+    if (S.over){ eb.classList.add('hidden'); ab.classList.add('hidden'); ob.classList.remove('hidden'); document.getElementById('resbox').classList.add('hidden'); document.getElementById('upgbox').classList.add('hidden'); }
+    else if (S.phase==='event'){
+      eb.classList.remove('hidden'); ab.classList.add('hidden'); ob.classList.add('hidden');
+      document.getElementById('resbox').classList.add('hidden');
+      document.getElementById('upgbox').classList.add('hidden');
+      document.getElementById('evtitle').textContent = S.ev.t;
+      document.getElementById('evtext').textContent = S.ev.x;
+      document.getElementById('evbtns').innerHTML = '';
+      S.ev.c.forEach(function(ch, i){
+        var btn = document.createElement('button'); btn.className='az-btn'; btn.textContent = ch.b;
+        btn.addEventListener('click', function(){ choose(i); });
+        document.getElementById('evbtns').appendChild(btn);
+      });
+    } else {
+      eb.classList.add('hidden'); ab.classList.remove('hidden'); ob.classList.add('hidden');
+      document.getElementById('resbox').classList.remove('hidden');
+      document.getElementById('upgbox').classList.remove('hidden');
+      document.getElementById('rpbal').textContent = S.rp;
+      document.getElementById('reslist').innerHTML = '';
+      RESEARCH.forEach(function(r){
+        var row = document.createElement('div'); row.className='az-arow';
+        var done = !!S.res[r.k];
+        row.innerHTML = '<span class="nm" style="width:190px">'+r.nm+'</span><span class="fx">'+(done?'COMPLETE':r.cost+' RP · '+r.fx)+'</span>';
+        if (!done){ var b=document.createElement('button'); b.className='az-btn'; b.textContent='RESEARCH'; b.disabled = S.rp < r.cost;
+          b.addEventListener('click', function(){ S.rp -= r.cost; S.res[r.k]=1; S.log.push('WEEK '+S.day+' — Research complete: '+r.nm+'. '+r.fx); save(); });
+          row.appendChild(b); }
+        document.getElementById('reslist').appendChild(row);
+      });
+      document.getElementById('upglist').innerHTML = '';
+      UPGRADES.forEach(function(u){
+        var row = document.createElement('div'); row.className='az-arow';
+        var done = !!S.upg[u.k];
+        var costTxt = Object.keys(u.cost).map(function(k){ return u.cost[k]+' '+k.toUpperCase(); }).join(' + ');
+        var afford = Object.keys(u.cost).every(function(k){ return S[k] >= u.cost[k]; });
+        row.innerHTML = '<span class="nm" style="width:190px">'+u.nm+'</span><span class="fx">'+(done?'BUILT':costTxt+' · '+u.fx)+'</span>';
+        if (!done){ var b=document.createElement('button'); b.className='az-btn'; b.textContent='BUILD'; b.disabled = !afford;
+          b.addEventListener('click', function(){ Object.keys(u.cost).forEach(function(k){ S[k]-=u.cost[k]; }); clamp(); S.upg[u.k]=1; S.log.push('WEEK '+S.day+' — Upgrade built: '+u.nm+'. '+u.fx); save(); });
+          row.appendChild(b); }
+        document.getElementById('upglist').appendChild(row);
+      });
+      var used = S.alloc.hydro+S.alloc.eng+S.alloc.inf+S.alloc.sec+S.alloc.lab;
+      document.getElementById('ptsleft').textContent = (10-used);
+      document.getElementById('alloc').innerHTML = '';
+      STATIONS.forEach(function(st){
+        var row = document.createElement('div'); row.className='az-arow';
+        row.innerHTML = '<span class="nm">'+st.nm+'</span><span class="fx">'+st.fx+'</span>';
+        var minus = document.createElement('button'); minus.className='az-step'; minus.textContent='\u2212';
+        minus.disabled = S.alloc[st.k]<=0;
+        minus.addEventListener('click', function(){ S.alloc[st.k]--; save(); });
+        var pts = document.createElement('span'); pts.className='az-pts'; pts.textContent = S.alloc[st.k];
+        var plus = document.createElement('button'); plus.className='az-step'; plus.textContent='+';
+        var usedNow = S.alloc.hydro+S.alloc.eng+S.alloc.inf+S.alloc.sec+S.alloc.lab;
+        plus.disabled = S.alloc[st.k]>=4 || usedNow>=10;
+        plus.addEventListener('click', function(){ S.alloc[st.k]++; save(); });
+        row.appendChild(minus); row.appendChild(pts); row.appendChild(plus);
+        document.getElementById('alloc').appendChild(row);
+      });
+    }
+    document.getElementById('log').textContent = S.log.slice(-14).join('\n');
+  }
+  function todaysEvent(){
+    if (SCRIPTED[S.day]) return SCRIPTED[S.day];
+    var ev = POOL[S.poolIdx % POOL.length]; S.poolIdx++; return ev;
+  }
+  function applyFx(fx){
+    if(!fx) return;
+    ['food','water','power','air','med','pop','morale','legit'].forEach(function(k){ if(fx[k]) S[k]+=fx[k]; });
+    clamp();
+  }
+  function choose(i){
+    var ch = S.ev.c[i];
+    applyFx(ch.fx);
+    S.log.push('WEEK '+S.day+' — '+ch.log);
+    S.phase='alloc'; save();
+  }
+  function endWatch(){
+    var a=S.alloc, notes=[];
+    var hydP = 2.1 + (S.res.light?0.35:0) + (S.upg.rack?0.35:0);
+    S.food += -7 + a.hydro*hydP; if (a.hydro>=3) notes.push('Hydroponics holds the line.');
+    S.water += -(S.res.water?6.2:7) + a.eng*0.7 + 2.45;
+    S.power += -(S.upg.diesel?4.8:5.6) + a.eng*1.96;
+    S.air += -(4.9 - (S.res.ash?1:0) - (S.upg.filters?0.7:0)) + a.eng*(S.upg.filters?1.88:1.68);
+    S.med += -(S.res.coldmed?0.75:1.05) + a.inf*((S.res.coldmed?1.0:0.84) + (S.upg.infirm?0.25:0));
+    S.morale += a.inf*1.2 + a.sec*0.4 - 1.2 + (S.upg.infirm?0.8:0);
+    S.legit += a.sec*(S.res.signal?1.5:1.1) - (S.upg.comms?0.3:0.8);
+    S.rp += a.lab; if (a.lab>0) notes.push('The boards give up '+a.lab+' research point'+(a.lab>1?'s':'')+'.');
+    if (S.day % 8 === 0){
+      var bite = S.res.seismic ? 0.5 : 1;
+      S.air -= 3*bite; S.power -= 2*bite;
+      notes.push(S.res.seismic ? 'A hard week — the ash thickens — but the model saw it coming. Half the bite.' : 'A hard week: the ash thickens with no warning. Air and power pay for it.');
+    }
+    if (S.food<14){ S.morale-=3; notes.push('Thin stores. The room can count.'); }
+    if (S.air<10){ S.morale-=3; S.legit-=1; notes.push('The air tastes of effort. People notice effort.'); }
+    if (S.morale<30){ S.legit-=2; notes.push('Morale is low enough to become a legitimacy problem.'); }
+    if (a.hydro<=1) notes.push('Hydroponics is running on a skeleton watch.');
+    if (a.eng<=1) notes.push('Engineering is stretched across power and air both.');
+    clamp();
+    S.log.push('WEEK '+S.day+' — Week ends. Food '+r1(S.food)+'d · Water '+r1(S.water)+'d · Power '+r1(S.power)+'d · Air '+r1(S.air)+'d · Med '+r1(S.med)+'d. '+(notes[0]||'The facility hums. The pump keeps counting.'));
+    // lose checks
+    var dead = S.food<=0?'the food ran out':S.water<=0?'the water ran out':S.power<=0?'the diesel ran out':S.air<=0?'the filters gave up':S.med<=0?'the infirmary shelf emptied':S.legit<=0?'legitimacy hit zero':null;
+    if (dead){
+      S.over=true;
+      document.getElementById('overbox').className='az-over bad';
+      document.getElementById('overbox').textContent = 'THE GOVERNMENT ENDS — WEEK '+S.day+'\n\nIt ended the way things end here: not as an event, as a number. '+(dead==='legitimacy hit zero'?'The facility still stands. The lights still work. But nobody in it believes it is the government anymore — and a continuity facility that nobody believes in is just a bunker with a flag.':'In week '+S.day+', '+dead+'. The rest was arithmetic.')+'\n\nFinal board — Food '+r1(S.food)+'d · Water '+r1(S.water)+'d · Power '+r1(S.power)+'d · Air '+r1(S.air)+'d · Med '+r1(S.med)+'d · Legitimacy '+Math.round(S.legit)+'% · Souls aboard '+S.pop+'.\n\nThe facility held for '+S.day+' weeks — '+Math.floor(S.day/52)+' year(s) and '+(S.day%52)+' weeks of the long watch.';
+      save(); return;
+    }
+    if (S.day % 52 === 0){
+      S.morale += 3; S.legit += 2; clamp();
+      S.log.push('WEEK '+S.day+' — ONE FULL YEAR. The facility marks it the way it marks everything: on the board, in the open. Somebody underlines it. This time, you know the hand. It is yours.');
+    }
+    S.day++; S.phase='event'; S.ev=todaysEvent(); save();
+  }
+  var AZ_KEY = 'argus-zero-save-v1';
+  var AZ_BRIDGE = !!(window.hatchWidget && window.hatchWidget.setState && window.hatchWidget.getState);
+  function azPersist(){ if (AZ_BRIDGE){ window.hatchWidget.setState(S); } else { try { localStorage.setItem(AZ_KEY, JSON.stringify(S)); } catch(e){} } }
+  function save(){ azPersist(); render(); }
+  document.getElementById('endwatch').addEventListener('click', endWatch);
+  document.getElementById('restart').addEventListener('click', function(){ S=fresh(); S.ev=todaysEvent(); save(); });
+  if (AZ_BRIDGE){
+    document.addEventListener('hatch-widget-state', function(e){ if(e.detail && e.detail.state && e.detail.state.day){ S=e.detail.state; norm(); render(); } });
+    window.hatchWidget.getState(null).then(function(s){
+      if (s && s.day){ S=s; norm(); } else { S=fresh(); S.ev=todaysEvent(); azPersist(); }
+      render();
+    });
+  } else {
+    var azRaw = null; try { azRaw = localStorage.getItem(AZ_KEY); } catch(e){}
+    if (azRaw){ try { S = JSON.parse(azRaw); } catch(e){ S = null; } }
+    if (S && S.day){ norm(); } else { S = fresh(); S.ev = todaysEvent(); azPersist(); }
+    render();
+  }
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+}
+</script>
+</body>
+</html>
