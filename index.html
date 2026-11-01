@@ -21,6 +21,10 @@
   .az-head { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid #2c4a38; padding-bottom:8px; margin-bottom:10px; gap:8px; flex-wrap:wrap; }
   .az-title { font-weight:700; letter-spacing:2px; font-size:16px; color:#eaffef; }
   .az-sub { font-size:10px; color:#7fae8c; letter-spacing:1px; }
+  .az-intro { border:1px solid #8a742a; border-left:4px solid #e0a83e; background:#141a10; border-radius:8px; padding:12px 14px; margin:0 0 10px; }
+  .az-intro h3 { margin:0 0 8px; font-size:12px; letter-spacing:2px; color:#e0a83e; }
+  .az-intro p { margin:0 0 8px; font-size:12.5px; line-height:1.55; color:#d8e8da; }
+  .az-intro p.dim { color:#9db8a3; font-size:11.5px; }
   .az-clock { font-size:12px; color:#ffd479; text-align:right; }
   .az-patch { display:inline-block; transform:rotate(-4deg); background:#31435a; color:#dbe9ff; font-size:9px; letter-spacing:1px; padding:2px 6px; border-radius:2px; border:1px dashed #7d9bbd; }
   .az-grid { display:flex; gap:10px; flex-wrap:wrap; }
@@ -65,11 +69,22 @@
   <div class="az-head">
     <div>
       <div class="az-title">ARGUS ZERO</div>
-      <div class="az-sub">USCS FACILITY — PRIMARY CONTROL ROOM · TEST SCENARIO: FIRST WATCH — ENDLESS · ONE TURN = ONE WEEK · BUILD 1.0</div>
+      <div class="az-sub">USCS FACILITY — PRIMARY CONTROL ROOM · TEST SCENARIO: FIRST WATCH — ENDLESS · ONE TURN = ONE WEEK · BUILD 1.1</div>
     </div>
     <div class="az-clock"><span id="dayline">DAY 1 · 08:17</span><br>
-      <span class="az-sub">ACTING CMDR: CAPT. M. HALE</span> <span class="az-patch">TEMP</span>
+      <span class="az-sub">ACTING CMDR: CAPT. M. HALE</span> <span class="az-patch">TEMP</span><br>
+      <span class="az-sub" style="cursor:pointer;text-decoration:underline" onclick="azShowIntro()">SITUATION BRIEF</span>
     </div>
+  </div>
+
+  <div class="az-intro hidden" id="azintro">
+    <h3>SITUATION BRIEF — READ FIRST</h3>
+    <p>You are <b>Captain Marcus "Marc" Hale</b>, a logistics officer three weeks into a captain's rank. Your pinning ceremony kept getting delayed, so your bars ride on Velcro — a temporary patch — and everyone in this room knows it.</p>
+    <p>This morning the Yellowstone seismic packet arrived six minutes late, and climbing. Then a high-priority secure request, origin blanked, pulled the commanding officer, Colonel Reeves, and his executive officer topside without explanation. The XO's last order over the internal line: <i>"Hale. You're acting until we return. Own it."</i> They have not returned. The line has not rung since.</p>
+    <p>Below you sits a United States Continuity Service facility outside Kansas City: <b>250 soldiers and 36 civilian staff — 286 souls</b> — built for the day the government might have to move underground and keep governing. That day is today. Above you, a supervolcano is deciding what the sky looks like for the next thousand years.</p>
+    <p>There is no relief column and no end date. There is a board — <b>food, water, power, air, medicine</b> — measured in days, a watch to staff every week, and a room full of people deciding whether the acting captain is the captain. That deciding has a name on the board: <b>legitimacy</b>. Let any stock — or their belief in you — hit zero, and the facility ends.</p>
+    <p class="dim">Each turn is one week. Answer the event, assign the watch, run the week. Hold the facility as long as you can. Nobody is coming. That's the job.</p>
+    <div class="az-btns"><button class="az-btn amber" onclick="azBegin()">TAKE THE WATCH ▸</button></div>
   </div>
 
   <div class="az-scene" id="scene"></div>
@@ -187,12 +202,12 @@
       {b:'LOG IT AND HOLD POWER', fx:{legit:-1}, log:'Coordinates in the log, in Torres\u2019 hand. Some doors you do not open are also data.'}]}
   ];
   function fresh(){
-    return { ver:1, day:1, phase:'event', food:60, water:90, power:55, air:48, med:35, pop:286, morale:58, legit:62,
+    return { intro:true, day:1, phase:'event', food:60, water:90, power:55, air:48, med:35, pop:286, morale:58, legit:62,
       alloc:{hydro:3, eng:3, inf:2, sec:1, lab:1}, rp:0, res:{}, upg:{}, ev:null, evDone:false, over:false, poolIdx:0,
       log:['WEEK 1 — 08:17. You take the watch. The packet is late. Nobody says anything yet.'] };
   }
   var S;
-  function norm(){ if(!S) return; if(S.ver===undefined) S.ver=1; if(S.rp===undefined) S.rp=0; if(!S.res) S.res={}; if(!S.upg) S.upg={}; if(S.alloc && S.alloc.lab===undefined) S.alloc.lab=0; }
+  function norm(){ if(!S) return; if(S.ver===undefined) S.ver=1; if(S.intro===undefined) S.intro=false; if(S.rp===undefined) S.rp=0; if(!S.res) S.res={}; if(!S.upg) S.upg={}; if(S.alloc && S.alloc.lab===undefined) S.alloc.lab=0; }
   function sceneFor(){
     var ph = S.over ? 'ended' : S.day===1 ? 'calm' : S.day===2 ? 'alert' : S.day===3 ? 'eruption' : S.day<=8 ? 'ashfall' : S.day<=25 ? 'winter' : 'deep';
     var sky = {calm:['#8fbfe8','#dceffb'], alert:['#d9a05a','#f2ddba'], eruption:['#4a3a33','#8a5a3a'], ashfall:['#6d6d6d','#a8a8a2'], winter:['#aebfc9','#e8eef0'], deep:['#5d6a72','#9aa7ad'], ended:['#0a0a0c','#1c1c20']}[ph];
@@ -234,6 +249,7 @@
   function r1(n){ return Math.round(n*10)/10; }
   function bar(v, max){ var p=Math.max(0,Math.min(100, v/max*100)); var cls = p<=25?'crit':(p<=45?'warn':''); return '<span class="az-bar"><i class="'+cls+'" style="width:'+p+'%"></i></span>'; }
   function render(){
+    var _ib = document.getElementById('azintro'); if (_ib) _ib.classList.toggle('hidden', !S.intro);
     document.getElementById('scene').innerHTML = sceneFor();
     var _y=Math.floor((S.day-1)/52)+1, _w=((S.day-1)%52)+1; document.getElementById('dayline').textContent = 'YEAR ' + _y + ' · WEEK ' + _w + ' · ' + (S.phase==='event' ? 'EVENT' : 'ALLOCATION');
     var rows = [
@@ -370,6 +386,8 @@
   var AZ_BRIDGE = !!(window.hatchWidget && window.hatchWidget.setState && window.hatchWidget.getState);
   function azPersist(){ if (AZ_BRIDGE){ window.hatchWidget.setState(S); } else { try { localStorage.setItem(AZ_KEY, JSON.stringify(S)); } catch(e){} } }
   function save(){ azPersist(); render(); }
+  function azBegin(){ S.intro=false; save(); }
+  function azShowIntro(){ S.intro=true; render(); }
   document.getElementById('endwatch').addEventListener('click', endWatch);
   document.getElementById('restart').addEventListener('click', function(){ S=fresh(); S.ev=todaysEvent(); save(); });
   if (AZ_BRIDGE){
