@@ -61,6 +61,17 @@
   .az-scene svg { display:block; width:100%; height:auto; }
   @keyframes blk { 0%,55% {opacity:1} 56%,100% {opacity:.1} }
   .blk { animation: blk 1.7s infinite; }
+  .az-start { padding:2px 0 0; }
+  .az-crawlbox { position:relative; height:290px; overflow:hidden; border:1px solid #57481c; border-radius:8px; background:#0b0903; margin:0 0 10px;
+    -webkit-mask-image:linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent); mask-image:linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent); }
+  .az-crawl { position:absolute; left:7%; right:7%; top:0; color:#e8c766; font-size:13.5px; line-height:1.75; text-align:center; animation: azrise 46s linear forwards; }
+  .az-crawl h5 { margin:0 0 16px; font-size:13px; letter-spacing:5px; color:#e0a83e; font-weight:700; }
+  .az-crawl p { margin:0 0 15px; }
+  @keyframes azrise { from { transform: translateY(102%); } to { transform: translateY(-118%); } }
+  .az-crawlend { text-align:center; color:#e0a83e; letter-spacing:2px; font-size:13px; line-height:1.7; padding:118px 26px 0; }
+  .az-startbtns { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .az-btn.big { font-size:13.5px; padding:10px 16px; letter-spacing:1px; }
+  .az-saveline { font-size:11px; color:#7fae8c; text-align:center; margin-top:9px; letter-spacing:.5px; }
 
 </style>
 </head>
@@ -69,7 +80,7 @@
   <div class="az-head">
     <div>
       <div class="az-title">ARGUS ZERO</div>
-      <div class="az-sub">USCS FACILITY — PRIMARY CONTROL ROOM · TEST SCENARIO: FIRST WATCH — ENDLESS · ONE TURN = ONE WEEK · BUILD 1.001</div>
+      <div class="az-sub">USCS FACILITY — PRIMARY CONTROL ROOM · TEST SCENARIO: FIRST WATCH — ENDLESS · ONE TURN = ONE WEEK · BUILD 1.002</div>
     </div>
     <div class="az-clock"><span id="dayline">DAY 1 · 08:17</span><br>
       <span class="az-sub">ACTING CMDR: CAPT. M. HALE</span> <span class="az-patch">TEMP</span><br>
@@ -87,6 +98,31 @@
     <div class="az-btns"><button class="az-btn amber" onclick="azBegin()">TAKE THE WATCH ▸</button></div>
   </div>
 
+  <div class="az-start" id="azstart">
+    <div class="az-crawlbox" id="azcrawlbox">
+      <div class="az-crawl" id="azcrawl">
+        <h5>ARGUS ZERO</h5>
+        <p>WHEN THE LEADERS ARE GONE, THE UNPREPARED MUST LEAD.</p>
+        <p>You are Captain Marcus &ldquo;Marc&rdquo; Hale &mdash; a logistics officer, three weeks a captain, your bars riding on a Velcro patch because the pinning kept getting delayed. Everyone in the control room knows it. So do you.</p>
+        <p>This morning, the Yellowstone seismic packet arrived six minutes late. And climbing.</p>
+        <p>Then a secure request with its origin blanked pulled Colonel Reeves and his XO topside, without explanation. Harlan&rsquo;s last words on the internal line: &ldquo;Hale. You&rsquo;re acting until we return. Own it.&rdquo;</p>
+        <p>They have not returned. The line has not rung since.</p>
+        <p>Below you: a United States Continuity Service facility outside Kansas City. Two hundred fifty soldiers. Thirty-six civilian staff. Two hundred eighty-six souls &mdash; and a board that reads food, water, power, air, and medicine in days.</p>
+        <p>Above you: a supervolcano, deciding what the sky looks like for the next thousand years.</p>
+        <p>There is no relief column. There is no end date. There is only the question the room asks every week, without ever saying it out loud: is the acting captain the captain?</p>
+        <p>NOBODY IS COMING. THAT&rsquo;S THE JOB.</p>
+      </div>
+      <div class="az-crawlend hidden" id="azcrawlend">THE WATCH IS YOURS, CAPTAIN.</div>
+    </div>
+    <div class="az-startbtns">
+      <button class="az-btn amber big" id="aznew">START NEW GAME &#9656;</button>
+      <button class="az-btn big hidden" id="azresume">RESUME THE WATCH &#9656;</button>
+      <button class="az-btn" id="azskip">SKIP &#9656;</button>
+    </div>
+    <div class="az-saveline" id="azsaveline"></div>
+  </div>
+
+  <div id="azgame" class="hidden">
   <div class="az-scene" id="scene"></div>
 
   <div class="az-grid">
@@ -136,7 +172,17 @@
   <div class="az-btns" style="margin-top:10px">
     <button class="az-btn" id="restart">RESTART SCENARIO</button>
   </div>
+  </div>
 </div>
+
+<script>
+if (!window.hatchWidget) {
+  window.hatchWidget = {
+    setState: function(s){ try { localStorage.setItem('argus-zero-save-v1', JSON.stringify(s)); } catch(e){} },
+    getState: function(){ try { var r = localStorage.getItem('argus-zero-save-v1'); return Promise.resolve(r ? JSON.parse(r) : null); } catch(e){ return Promise.resolve(null); } }
+  };
+}
+</script>
 <script>
 (function(){
   var STATIONS = [
@@ -202,7 +248,7 @@
       {b:'LOG IT AND HOLD POWER', fx:{legit:-1}, log:'Coordinates in the log, in Torres\u2019 hand. Some doors you do not open are also data.'}]}
   ];
   function fresh(){
-    return { intro:true, day:1, phase:'event', food:60, water:90, power:55, air:48, med:35, pop:286, morale:58, legit:62,
+    return { ver:1, intro:true, day:1, phase:'event', food:60, water:90, power:55, air:48, med:35, pop:286, morale:58, legit:62,
       alloc:{hydro:3, eng:3, inf:2, sec:1, lab:1}, rp:0, res:{}, upg:{}, ev:null, evDone:false, over:false, poolIdx:0,
       log:['WEEK 1 — 08:17. You take the watch. The packet is late. Nobody says anything yet.'] };
   }
@@ -382,26 +428,66 @@
     }
     S.day++; S.phase='event'; S.ev=todaysEvent(); save();
   }
-  var AZ_KEY = 'argus-zero-save-v1';
-  var AZ_BRIDGE = !!(window.hatchWidget && window.hatchWidget.setState && window.hatchWidget.getState);
-  function azPersist(){ if (AZ_BRIDGE){ window.hatchWidget.setState(S); } else { try { localStorage.setItem(AZ_KEY, JSON.stringify(S)); } catch(e){} } }
-  function save(){ azPersist(); render(); }
+  function save(){ window.hatchWidget.setState(S); render(); }
   function azBegin(){ S.intro=false; save(); }
   function azShowIntro(){ S.intro=true; render(); }
-  document.getElementById('endwatch').addEventListener('click', endWatch);
-  document.getElementById('restart').addEventListener('click', function(){ S=fresh(); S.ev=todaysEvent(); save(); });
-  if (AZ_BRIDGE){
-    document.addEventListener('hatch-widget-state', function(e){ if(e.detail && e.detail.state && e.detail.state.day){ S=e.detail.state; norm(); render(); } });
-    window.hatchWidget.getState(null).then(function(s){
-      if (s && s.day){ S=s; norm(); } else { S=fresh(); S.ev=todaysEvent(); azPersist(); }
-      render();
-    });
-  } else {
-    var azRaw = null; try { azRaw = localStorage.getItem(AZ_KEY); } catch(e){}
-    if (azRaw){ try { S = JSON.parse(azRaw); } catch(e){ S = null; } }
-    if (S && S.day){ norm(); } else { S = fresh(); S.ev = todaysEvent(); azPersist(); }
+  var PENDING = null, STARTED = false;
+  function yrWk(d){ return 'YEAR ' + (Math.floor((d-1)/52)+1) + ' \u00b7 WEEK ' + (((d-1)%52)+1); }
+  function showStart(){
+    var st = document.getElementById('azstart'), gm = document.getElementById('azgame');
+    if (st) st.classList.remove('hidden'); if (gm) gm.classList.add('hidden');
+    var rb = document.getElementById('azresume'), sl = document.getElementById('azsaveline'), nb = document.getElementById('aznew');
+    if (PENDING && PENDING.day){
+      rb.classList.remove('hidden');
+      rb.textContent = 'RESUME THE WATCH \u25b8 ' + yrWk(PENDING.day);
+      sl.textContent = 'CURRENT WATCH \u2014 ' + yrWk(PENDING.day) + ' \u00b7 LEGITIMACY ' + Math.round(PENDING.legit||0) + '% \u00b7 SOULS ABOARD ' + (PENDING.pop||0) + (PENDING.over ? ' \u00b7 THIS WATCH HAS ENDED' : '');
+      nb.textContent = 'START NEW GAME';
+    } else {
+      rb.classList.add('hidden');
+      sl.textContent = 'NO WATCH IN PROGRESS \u2014 THE CHAIR IS EMPTY.';
+      nb.textContent = 'START NEW GAME \u25b8';
+    }
+    nb.dataset.arm = '';
+  }
+  function azStartNew(){
+    var nb = document.getElementById('aznew');
+    if (PENDING && PENDING.day && !PENDING.over && nb.dataset.arm !== '1'){
+      nb.dataset.arm = '1'; nb.textContent = 'CONFIRM \u2014 END THE CURRENT WATCH AND START OVER'; return;
+    }
+    S = fresh(); S.intro = false; S.ev = todaysEvent(); STARTED = true; PENDING = null;
+    document.getElementById('azstart').classList.add('hidden');
+    document.getElementById('azgame').classList.remove('hidden');
+    save();
+  }
+  function azResume(){
+    if (!PENDING || !PENDING.day) return;
+    S = PENDING; norm(); STARTED = true;
+    document.getElementById('azstart').classList.add('hidden');
+    document.getElementById('azgame').classList.remove('hidden');
+    if (!S.over && !S.ev) S.ev = todaysEvent();
     render();
   }
+  function azSkipCrawl(){
+    var c = document.getElementById('azcrawl'); if (c){ c.style.animation = 'none'; c.style.display = 'none'; }
+    var e = document.getElementById('azcrawlend'); if (e) e.classList.remove('hidden');
+    var sk = document.getElementById('azskip'); if (sk) sk.classList.add('hidden');
+  }
+  document.getElementById('aznew').addEventListener('click', azStartNew);
+  document.getElementById('azresume').addEventListener('click', azResume);
+  document.getElementById('azskip').addEventListener('click', azSkipCrawl);
+  document.getElementById('azcrawl').addEventListener('animationend', azSkipCrawl);
+  document.getElementById('endwatch').addEventListener('click', endWatch);
+  document.getElementById('restart').addEventListener('click', function(){ S=fresh(); S.intro=false; S.ev=todaysEvent(); save(); });
+  document.addEventListener('hatch-widget-state', function(e){
+    if(e.detail && e.detail.state && e.detail.state.day){
+      if (!STARTED){ if (PENDING !== e.detail.state){ PENDING = e.detail.state; showStart(); } }
+      else { S = e.detail.state; norm(); render(); }
+    }
+  });
+  window.hatchWidget.getState(null).then(function(s){
+    if (s && s.day && PENDING !== s){ PENDING = s; }
+    showStart();
+  });
 })();
 </script>
 <script>
